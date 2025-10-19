@@ -1,0 +1,40 @@
+# Here the instructions define your application as a service called "server".*
+# This service is built from the Dockerfile in the current directory.*
+# You can add other services your application may depend on here, such as a*
+# database or a cache. For examples, see the Awesome Compose repository:*
+# https://github.com/docker/awesome-compose*
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: example
+      POSTGRES_PASSWORD: mysecretpassword   # Direct password for local dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build: .
+    ports:
+      - "8001:8001"
+    environment:
+      POSTGRES_SERVER: db
+      POSTGRES_USER: postgres
+      POSTGRES_DB: example
+      POSTGRES_PASSWORD: mysecretpassword
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db-data:
